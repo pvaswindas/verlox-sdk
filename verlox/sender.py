@@ -41,7 +41,7 @@ async def sender_loop(
         queue.task_done()
 
 
-def sender_verlox_sender(endpoint: str, api_key: str, api_secret: str):
+def start_verlox_sender(endpoint: str, api_key: str, api_secret: str):
     loop = asyncio.get_event_loop()
     stop_event = asyncio.Event()
     loop.create_task(sender_loop(endpoint, api_key, api_secret, stop_event))
