@@ -3,6 +3,7 @@ import random
 import logging
 from .queue import get_queue
 from .transport import post_event
+from .config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +15,6 @@ async def _backoff_sleep(attempt: int):
 
 
 async def sender_loop(
-    endpoint: str,
-    api_key: str,
-    api_secret: str,
     stop_event: asyncio.Event | None = None,
 ):
     queue = get_queue()
@@ -29,7 +27,9 @@ async def sender_loop(
         max_attempts = 5
         while True:
             try:
-                await post_event(endpoint, api_key, api_secret, event)
+                await post_event(
+                    settings.ENDPOINT, settings.API_KEY, settings.API_SECRET, event
+                )
                 break
             except Exception as exc:
                 attempt += 1
@@ -41,8 +41,8 @@ async def sender_loop(
         queue.task_done()
 
 
-def start_verlox_sender(endpoint: str, api_key: str, api_secret: str):
+def start_verlox_sender():
     loop = asyncio.get_event_loop()
     stop_event = asyncio.Event()
-    loop.create_task(sender_loop(endpoint, api_key, api_secret, stop_event))
+    loop.create_task(sender_loop(stop_event))
     return stop_event

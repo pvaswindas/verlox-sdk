@@ -19,7 +19,8 @@ def extract_frames(exc: BaseException, max_frames: int = 6) -> list[dict]:
     if tb is None:
         return []
     extracted = traceback.extract_tb(tb)
-    selected = extracted[-max_frames]
+    selected = extracted[-max_frames:]
+
     frames = []
     for frame in selected:
         frames.append(
