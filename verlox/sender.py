@@ -1,5 +1,4 @@
 import asyncio
-import random
 import logging
 from .queue import get_queue
 from .transport import post_event
@@ -9,22 +8,19 @@ logger = logging.getLogger(__name__)
 
 
 async def _backoff_sleep(attempt: int):
-    base = min(30, 2**attempt)
-    jitter = random.uniform(0, 1)
-    await asyncio.sleep(base + jitter)
+    import random
+
+    await asyncio.sleep(min(30, 2**attempt) + random.random())
 
 
-async def sender_loop(
-    stop_event: asyncio.Event | None = None,
-):
+async def sender_loop():
     queue = get_queue()
     logger.info("[Verlox] sender started")
+
     while True:
-        if stop_event and stop_event.is_set():
-            break
         event = await queue.get()
         attempt = 0
-        max_attempts = 5
+
         while True:
             try:
                 await post_event(
@@ -32,17 +28,16 @@ async def sender_loop(
                 )
                 break
             except Exception as exc:
+                logger.error(f"[VerloxSender] error in sending: {str(exc)}")
                 attempt += 1
-                logger.warning(f"[Verlox] send failed attempt={attempt} error={exc}")
-                if attempt >= max_attempts:
-                    logger.error(f"[Verlox] giving up after {attempt} attempts")
+                if attempt >= 5:
+                    logger.exception("[VerloxSender] giving up after 5 attempts")
                     break
                 await _backoff_sleep(attempt)
+
         queue.task_done()
 
 
 def start_verlox_sender():
     loop = asyncio.get_event_loop()
-    stop_event = asyncio.Event()
-    loop.create_task(sender_loop(stop_event))
-    return stop_event
+    loop.create_task(sender_loop())

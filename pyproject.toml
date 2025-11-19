@@ -1,16 +1,33 @@
 [project]
 name = "verlox"
 version = "0.1.0"
-description = ""
+description = "A plug-and-play error monitoring SDK for FastAPI backends."
 authors = [
-    {name = "ASWIN DAS P V",email = "pvaswindas.dev@gmail.com"}
+    {name = "ASWIN DAS P V", email = "pvaswindas.dev@gmail.com"}
 ]
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
+
+keywords = ["verlox", "error-monitoring", "logging", "observability", "fastapi", "sdk"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Framework :: FastAPI",
+    "Topic :: System :: Logging",
+    "Topic :: System :: Monitoring",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
 dependencies = [
-    "httpx (>=0.28.1,<0.29.0)",
-    "fastapi (>=0.121.2,<0.122.0)"
+    "httpx>=0.28.1,<0.29.0",
+    "fastapi>=0.121.2,<0.122.0",
+    "starlette>=0.49.0,<0.50.0",
+    "pydantic-settings>=2.12.0,<3.0.0",
+    "python-dotenv>=1.0.1,<2.0.0"
 ]
 
 [tool.poetry]

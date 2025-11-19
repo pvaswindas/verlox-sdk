@@ -14,5 +14,4 @@ except Exception:
 __all__ = [
     "VerloxMiddleware",
     "VerloxLogHandler",
-    "start_verlox_sender",
 ]

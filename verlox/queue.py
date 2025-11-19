@@ -1,6 +1,5 @@
 import asyncio
 
-
 _event_queue = None
 
 
@@ -11,7 +10,7 @@ def get_queue() -> asyncio.Queue:
     return _event_queue
 
 
-async def enqueue(event: dict):
+def enqueue(event: dict):
     queue = get_queue()
     try:
         queue.put_nowait(event)
@@ -22,3 +21,7 @@ async def enqueue(event: dict):
             queue.put_nowait(event)
         except Exception:
             pass
+
+
+async def enqueue_async(event: dict):
+    enqueue(event)

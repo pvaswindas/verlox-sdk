@@ -2,8 +2,8 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from .processor import summarize, clean_headers
 from .utils import iso_ts
-from .queue import enqueue
 from .task_manager import spawn
+from .queue import enqueue_async
 from .config import settings
 
 
@@ -27,6 +27,5 @@ class VerloxMiddleware(BaseHTTPMiddleware):
                 },
             }
 
-            spawn(enqueue(payload))
-
+            spawn(enqueue_async(payload))
             raise

@@ -3,8 +3,8 @@ import asyncio
 from logging import LogRecord
 from .processor import summarize
 from .utils import iso_ts
-from .queue import enqueue
 from .task_manager import spawn
+from .queue import enqueue_async
 
 
 class VerloxLogHandler(logging.Handler):
@@ -28,11 +28,11 @@ class VerloxLogHandler(logging.Handler):
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    spawn(enqueue(payload))
+                    spawn(enqueue_async(payload))
                 else:
-                    asyncio.run(enqueue(payload))
+                    asyncio.run(enqueue_async(payload))
             except RuntimeError:
-                asyncio.run(enqueue(payload))
+                asyncio.run(enqueue_async(payload))
 
         except Exception:
             self.handleError(record)
