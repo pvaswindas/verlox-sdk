@@ -1,10 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
 from dotenv import load_dotenv
 
-env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(env_path)
-
+# Load .env from the application, not SDK
+load_dotenv()
 
 class VerloxSettings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -20,6 +18,5 @@ class VerloxSettings(BaseSettings):
     API_SECRET: str
     SERVICE_NAME: str
     ENVIRONMENT: str
-
 
 settings = VerloxSettings()
