@@ -19,48 +19,65 @@ async def _backoff_sleep(attempt: int):
 async def _sender_loop(stop_event: asyncio.Event | None = None):
     queue = get_queue()
     debug("Verlox sender loop started")
-    while True:
-        if stop_event and stop_event.is_set():
-            debug("Verlox sender stop_event set, exiting sender loop")
-            break
-        try:
-            event = await queue.get()
-        except Exception as e:
-            error("Sender failed to get from queue: %s", e)
-            await asyncio.sleep(1)
+
+    while not _should_stop(stop_event):
+        event = await _get_event(queue)
+        if event is None:
             continue
 
-        attempt = 0
-        max_attempts = 5
-        while True:
-            try:
-                if not is_enabled():
-                    debug("Verlox disabled, skipping send")
-                    break
-                cfg = get_config()
-                endpoint = cfg.dsn
-                if not endpoint:
-                    debug("No endpoint configured, dropping event")
-                    break
-                await post_event(
-                    endpoint=endpoint,
-                    api_key=cfg.api_key,
-                    api_secret=cfg.api_secret,
-                    event=event,
-                )
-                debug("Event posted successfully")
-                break
-            except Exception as exc:
-                attempt += 1
-                error("Verlox sender failed attempt=%s error=%s", attempt, exc)
-                if attempt >= max_attempts:
-                    error("Verlox giving up after %s attempts", attempt)
-                    break
-                await _backoff_sleep(attempt)
+        await _send_event_with_retry(event)
         try:
             queue.task_done()
         except Exception:
             pass
+
+
+def _should_stop(stop_event: asyncio.Event | None = None) -> bool:
+    return bool(stop_event and stop_event.is_set())
+
+
+async def _get_event(queue: asyncio.Queue) -> dict | None:
+    try:
+        return await queue.get()
+    except Exception as exc:
+        error(f"Sender failed to get from queue: {str(exc)}")
+        await asyncio.sleep(1)
+        return None
+
+
+async def _send_event_with_retry(event: dict):
+    if not is_enabled():
+        debug("Verlox disabled, skipping send")
+        return
+
+    config = get_config()
+    endpoint = config.dsn
+    if not endpoint:
+        debug("No endpoint configured, dropping event")
+        return
+
+    max_attempts = 5
+    for attempt in range(1, max_attempts + 1):
+        if await _try_send_event(endpoint, config, event, attempt):
+            return
+        await _backoff_sleep(attempt)
+
+
+async def _try_send_event(endpoint, config, event, attempt: int) -> bool:
+    try:
+        await post_event(
+            endpoint=endpoint,
+            api_key=config.api_key,
+            api_secret=config.api_secret,
+            event=event,
+        )
+        debug("Event posted successfully")
+        return True
+    except Exception as exc:
+        error(f"Verlox sender failed attempt={attempt} error={str(exc)}")
+        if attempt >= 5:
+            error(f"Verlox giving up after {attempt} attempts")
+        return False
 
 
 def start_sender_loop():
