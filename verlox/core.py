@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from .enums import Environment
+from .constants import Environment
 
 
 @dataclass
 class VerloxConfig:
-    dsn: str | None
+    ingest_url: str | None
     api_key: str | None
     api_secret: str | None
     service_name: str | None
