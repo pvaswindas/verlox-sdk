@@ -6,12 +6,13 @@ from .transport import post_event
 from .core import is_enabled, get_config
 from .task_manager import spawn
 from .internal_logger import debug, error
+from .constants import MAX_RETRY_ATTEMPTS, MAX_BACKOFF_SECONDS
 
 _logger = logging.getLogger("verlox.sender")
 
 
 async def _backoff_sleep(attempt: int):
-    base = min(30, 2**attempt)
+    base = min(MAX_BACKOFF_SECONDS, 2**attempt)
     jitter = random.uniform(0, 1)
     await asyncio.sleep(base + jitter)
 
@@ -51,13 +52,12 @@ async def _send_event_with_retry(event: dict):
         return
 
     config = get_config()
-    endpoint = config.dsn
+    endpoint = config.ingest_url
     if not endpoint:
         debug("No endpoint configured, dropping event")
         return
 
-    max_attempts = 5
-    for attempt in range(1, max_attempts + 1):
+    for attempt in range(1, MAX_RETRY_ATTEMPTS + 1):
         if await _try_send_event(endpoint, config, event, attempt):
             return
         await _backoff_sleep(attempt)
@@ -75,7 +75,7 @@ async def _try_send_event(endpoint, config, event, attempt: int) -> bool:
         return True
     except Exception as exc:
         error(f"Verlox sender failed attempt={attempt} error={str(exc)}")
-        if attempt >= 5:
+        if attempt >= MAX_RETRY_ATTEMPTS:
             error(f"Verlox giving up after {attempt} attempts")
         return False
 
