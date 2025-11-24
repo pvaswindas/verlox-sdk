@@ -6,6 +6,7 @@ from .utils import iso_ts
 from processor import summarize
 from .core import is_enabled, get_config
 from .internal_logger import debug, error
+from .constants import SDK_NAME, SDK_VERSION
 
 
 def _build_payload_from_exception(exc: BaseException):
@@ -18,7 +19,7 @@ def _build_payload_from_exception(exc: BaseException):
 
         payload = {
             "timestamp": iso_ts(),
-            "sdk": {"name": "verlox", "version": "0.1.0"},
+            "sdk": {"name": SDK_NAME, "version": SDK_VERSION},
             "app": {
                 "name": config.service_name if config else None,
                 "environment": config.environment.value if config else None,
