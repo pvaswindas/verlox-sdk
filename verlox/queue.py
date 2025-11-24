@@ -1,14 +1,14 @@
 import asyncio
 from .internal_logger import debug, error
+from .constants import QUEUE_MAX_SIZE
 
 _event_queue: asyncio.Queue | None = None
-_MAXSIZE = 1000
 
 
 def get_queue() -> asyncio.Queue:
     global _event_queue
     if _event_queue is None:
-        _event_queue = asyncio.Queue(maxsize=_MAXSIZE)
+        _event_queue = asyncio.Queue(maxsize=QUEUE_MAX_SIZE)
     return _event_queue
 
 
