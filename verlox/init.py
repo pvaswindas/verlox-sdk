@@ -1,6 +1,6 @@
 from .core import set_config, is_enabled
 from .capture import setup_global_exception_hooks
-from .integrations.asyncio import instrument_asyncio_tasks
+from .integrations import instrument_asyncio_tasks
 from .sender import start_sender_loop
 from .internal_logger import enable_file_debug, disable_debug
 from .constants import Environment
