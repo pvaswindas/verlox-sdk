@@ -1,7 +1,7 @@
 from .core import set_config, is_enabled
 from .capture import setup_global_exception_hooks
 from .integrations import instrument_asyncio_tasks
-from .sender import start_sender_loop
+from .sender import start_sender_loop, flush as flush_sender, shutdown as shutdown_sender
 from .internal_logger import enable_file_debug, disable_debug
 from .constants import Environment
 from .config_resolver import fetch_ingest_url
@@ -55,5 +55,19 @@ def init(
 
     try:
         start_sender_loop()
+    except Exception:
+        pass
+
+
+def flush(timeout: float = 5.0):
+    try:
+        flush_sender(timeout=timeout)
+    except Exception:
+        pass
+
+
+def shutdown(timeout: float = 5.0):
+    try:
+        shutdown_sender(timeout=timeout)
     except Exception:
         pass
