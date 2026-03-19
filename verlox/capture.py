@@ -1,9 +1,8 @@
 import sys
 import asyncio
-from .task_manager import spawn
 from .queue import enqueue
 from .utils import iso_ts
-from processor import summarize
+from .processor import summarize
 from .core import is_enabled, get_config
 from .internal_logger import debug, error
 from .constants import SDK_NAME, SDK_VERSION
@@ -51,7 +50,7 @@ def capture_exception(exc: Exception):
             return
         payload = _build_payload_from_exception(exc)
         try:
-            spawn(enqueue(payload))
+            enqueue(payload)
         except Exception as internal_exc:
             error(f"Verlox failed to enqueue: {str(internal_exc)}")
     except Exception as internal_exc:
