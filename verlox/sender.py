@@ -3,7 +3,7 @@ import random
 import threading
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from .queue import get_queue
-from .transport import post_event
+from .transport import post_event, close_client
 from .core import is_enabled, get_config
 from .internal_logger import debug, error
 from .constants import MAX_RETRY_ATTEMPTS, MAX_BACKOFF_SECONDS
@@ -72,14 +72,22 @@ async def _send_event_with_retry(event: dict):
 
 async def _try_send_event(endpoint, config, event, attempt: int) -> bool:
     try:
-        await post_event(
+        result = await post_event(
             endpoint=endpoint,
             api_key=config.api_key,
             api_secret=config.api_secret,
             event=event,
         )
-        debug("Event posted successfully")
-        return True
+        if result == "success":
+            debug("Event posted successfully")
+            return True
+        if result == "drop":
+            debug("Dropping non-retryable event")
+            return True
+        error(f"Verlox sender retryable failure attempt={attempt}")
+        if attempt >= MAX_RETRY_ATTEMPTS:
+            error(f"Verlox giving up after {attempt} attempts")
+        return False
     except Exception as exc:
         error(f"Verlox sender failed attempt={attempt} error={str(exc)}")
         if attempt >= MAX_RETRY_ATTEMPTS:
@@ -239,6 +247,26 @@ def shutdown(timeout: float = 5.0):
             with _state_lock:
                 _reset_state_locked()
             return
+
+        try:
+            closing_future = asyncio.run_coroutine_threadsafe(close_client(), loop)
+            try:
+                closing_future.result(timeout=timeout)
+            except FutureTimeoutError:
+                error("close_client timed out")
+            except Exception as exc:
+                error(f"close_client failed: {str(exc)}")
+        except Exception:
+            try:
+                running = asyncio.get_running_loop()
+            except Exception:
+                running = None
+
+            if running and running is loop:
+                try:
+                    loop.create_task(close_client())
+                except Exception as exc:
+                    error(f"close_client scheduling failed: {str(exc)}")
 
         def _request_stop():
             try:
